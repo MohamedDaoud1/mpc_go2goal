@@ -1,0 +1,2 @@
+type: "position_controllers/JointPositionController"
+joint: Front_Wheel_Right_Wheel_joint_Steer

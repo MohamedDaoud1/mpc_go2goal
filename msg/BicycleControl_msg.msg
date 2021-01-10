@@ -1,0 +1,2 @@
+float64 deltaBi
+float64 FrSpin

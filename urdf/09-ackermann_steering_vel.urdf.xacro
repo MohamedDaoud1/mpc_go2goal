@@ -1,0 +1,258 @@
+<?xml version="1.0"?>
+
+<robot name="AckVcl" xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+ <xacro:property name="chassis_dx" value="2.6" />
+ <xacro:property name="chassis_dy" value="1.5" />
+ <xacro:property name="chassis_dz" value="0.1" />
+ <xacro:property name="wheel_radius" value="0.2" />
+ <xacro:property name="wheel_width" value="0.18" />
+ <xacro:property name="chassis_z0" value="0.2" />
+
+  <xacro:property name="pi" value="3.1415" />
+  
+ <xacro:property name="wheel_x0" value="${chassis_dx/2}" />
+ <xacro:property name="wheel_y0" value="${(chassis_dy/2)  + (0.6*wheel_width)}" />
+ 
+ <xacro:property name="steer_limit" value="${90.0 * pi/180.0}" />
+ <xacro:property name="caster_angle" value="0.2" />
+ 
+ <xacro:property name="chassis_mass" value="1604" />
+ <xacro:property name="wheel_mass" value="3" />
+ 
+
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+ 
+  <!-- 
+  chassis_ixx  = chassis_mass/12.0 * (chassis_dy**2 + chassis_dz**2)
+  chassis_iyy  = chassis_mass/12.0 * (chassis_dz**2 + chassis_dx**2)
+  chassis_izz  = chassis_mass/12.0 * (chassis_dx**2 + chassis_dy**2)
+  
+  wheel_ixx    = wheel_mass * (wheel_radius**2 / 4.0 + wheel_width*wheel_width / 12.0)
+  wheel_iyy    = wheel_mass * (wheel_radius**2 / 4.0 + wheel_width*wheel_width / 12.0)
+  wheel_izz    = wheel_mass/2.0 * wheel_radius*wheel_radius
+  -->
+  
+  <xacro:macro name="Inertia_Parameters_Chassis" params="mass">
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${mass/12.0 * (chassis_dy*chassis_dy + chassis_dz*chassis_dz)}" ixy="0.0" ixz="0.0" iyy="${mass/12.0 * (chassis_dz*chassis_dz + chassis_dx*chassis_dx)}" iyz="0.0" izz="${mass/12.0 * (chassis_dx*chassis_dx + chassis_dy*chassis_dy)}" />
+    </inertial>
+  </xacro:macro>
+  
+   
+  <xacro:macro name="Inertia_Parameters_Wheel" params="mass">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass * (wheel_radius**2 / 4.0 + wheel_width*wheel_width / 12.0)}" ixy="0.0" ixz="0.0" iyy="${mass * (wheel_radius**2 / 4.0 + wheel_width*wheel_width / 12.0)}" iyz="0.0" izz="${mass/2.0 * wheel_radius*wheel_radius}" />
+    </inertial>
+  </xacro:macro>
+   
+    
+  <xacro:macro name="Front_Wheel_Hub" params="prefix suffix xreflect yreflect mass">
+  	<link name="${prefix}_${suffix}_Wheel_Hub">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius/2.0}" length="${wheel_width/2.0}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${wheel_radius/2.0}" length="${wheel_width/2.0}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        </collision>
+        <xacro:Inertia_Parameters_Wheel mass="${wheel_mass/6.0}"/>
+    </link>
+    
+    <joint name="Front_Wheel_${suffix}_Wheel_joint_Steer" type="revolute">
+      <axis xyz="1 0 0" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${-steer_limit}" upper="${steer_limit}" velocity="0.80"/>
+      <parent link="base_link"/>
+      <child link="${prefix}_${suffix}_Wheel_Hub"/>
+      <origin xyz="${xreflect*chassis_dx/2} ${yreflect*chassis_dy/2} ${wheel_radius}" rpy="0 ${pi/2} 0"/>
+    </joint> 
+     
+    <transmission name="Front_${suffix}_hub_wheel_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="Front_${suffix}_hub_wheel_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="Front_Wheel_${suffix}_Wheel_joint_Steer">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    </transmission>  
+  </xacro:macro>
+    
+ 
+  <xacro:macro name="Front_Wheel" params="prefix suffix xreflect yreflect mass">
+    <link name="${prefix}_${suffix}_Wheel">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        </collision>
+        <xacro:Inertia_Parameters_Wheel mass="${wheel_mass}"/>
+    </link> 
+	<joint name="Front_Wheel_${suffix}_Wheel_joint_Drive" type="continuous">
+	 <axis xyz="0 1 0" rpy="0 0 0" />
+	 <parent link="${prefix}_${suffix}_Wheel_Hub"/>
+      <child link="${prefix}_${suffix}_Wheel"/>
+      <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+    </joint>
+    
+    <gazebo reference="${prefix}_${suffix}_Wheel">
+	<mu1 value="10000000.0"/>
+	<mu2 value="10000000.0"/>
+	<kp value="10000000.0" />
+	<kd value="10000000" />
+	<material>Gazebo/Blue</material>
+  </gazebo>
+  
+    <transmission name="Front_Wheel_${suffix}_Wheel_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="Front_Wheel_${suffix}_Wheel_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="Front_Wheel_${suffix}_Wheel_joint_Drive">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    </transmission>  
+  </xacro:macro>
+  
+  
+  <xacro:macro name="Rear_Wheel" params="prefix suffix xreflect yreflect mass">
+    <link name="${prefix}_${suffix}_Wheel">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        </collision>
+        <xacro:Inertia_Parameters_Wheel mass="${wheel_mass}"/>
+    </link>
+  
+  <joint name="Rear_Wheel_${suffix}_Wheel_joint" type="continuous">
+      <axis xyz="0 1 0" rpy="0 0 0" />
+      <parent link="base_link"/>
+      <child link="${prefix}_${suffix}_Wheel"/>
+      <origin xyz="${xreflect*chassis_dx/2} ${yreflect*chassis_dy/2} ${wheel_radius}" rpy="0 ${pi/2} 0"/>
+    </joint>
+    
+   <gazebo reference="${prefix}_${suffix}_Wheel">
+	<mu1 value="10000000.0"/>
+	<mu2 value="10000000.0"/>
+	<kp value="10000000.0" />
+	<kd value="10000000.0" />
+	<material>Gazebo/Red</material>
+  </gazebo> 
+  
+   <transmission name="${suffix}_wheel_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="${suffix}_wheel_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="Rear_Wheel_${suffix}_Wheel_joint">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    </transmission>  
+  </xacro:macro>
+  
+
+ <link name="base_link">
+    <visual>
+    <origin xyz="0 0 ${chassis_z0}" rpy="0 0 0" />
+      <geometry>
+        <box size="${chassis_dx} ${chassis_dy} ${chassis_dz}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+    	 <origin xyz="0 0 ${chassis_z0}" rpy="0 0 0" />
+      <geometry>
+        <box size="${chassis_dx} ${chassis_dy} ${chassis_dz}"/>
+      </geometry>
+    </collision>
+    <xacro:Inertia_Parameters_Chassis mass="${chassis_mass}"/>
+    
+    <joint name="base_link_joint" type="floating">
+      <parent link="odom"/>
+      <child link="base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <gazebo reference="base_link">
+    	<material>Gazebo/Orange</material>
+    </gazebo>
+  
+  </link>
+  
+<!--
+  <link name="world">
+    <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="$0 0 0"/>
+      </geometry>
+    </visual>
+    <collision>
+    </collision>
+    <xacro:Inertia_Parameters_Chassis mass="0"/>
+  </link>
+-->
+  <xacro:Front_Wheel_Hub prefix="Front" suffix="Right" xreflect="1" yreflect="-1" mass="${wheel_mass}"/>
+  <xacro:Front_Wheel prefix="Front" suffix="Right" xreflect="1" yreflect="-1" mass="${wheel_mass}"/>
+  <xacro:Front_Wheel_Hub prefix="Front" suffix="Left" xreflect="1" yreflect="1" mass="${wheel_mass}"/>
+  <xacro:Front_Wheel prefix="Front" suffix="Left" xreflect="1" yreflect="1" mass="${wheel_mass}"/>
+  
+  <xacro:Rear_Wheel  prefix="Rear" suffix="Right" xreflect="-1" yreflect="-1" mass="${wheel_mass}"/>
+  <xacro:Rear_Wheel  prefix="Rear" suffix="Left" xreflect="-1" yreflect="1" mass="${wheel_mass}"/>    
+  
+    
+  
+  
+   
+  <!-- Gazebo plugin for ROS Control -->  
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+      <legacyModeNS>true</legacyModeNS>
+    </plugin>
+  </gazebo>
+
+</robot>
+  
+  
+  
+  
+  
+  

@@ -1,0 +1,52 @@
+<launch>
+
+  <arg name="model" default="$(find mpc_sim)/urdf/09-ackermann_steering_vel.urdf.xacro"/>
+  <arg name="rvizconfig" default="$(find mpc_sim)/rviz/urdf.rviz" />
+
+  <include file="$(find mpc_sim)/launch/gazebo.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+  
+
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/joints.yaml"
+            ns="vehcile_joint_state_controller" />
+  
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Vel/Vel_Front_Wheel_Left_Drive.yaml"
+            ns="Vel_Front_Wheel_Left_Drive" />
+
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Pos_Front_Wheel_Left_Steer.yaml"
+            ns="Pos_Front_Wheel_Left_Steer" />
+
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Vel/Vel_Front_Wheel_Right_Drive.yaml"
+            ns="Vel_Front_Wheel_Right_Drive" />
+
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Pos_Front_Wheel_Right_Steer.yaml"
+            ns="Pos_Front_Wheel_Right_Steer" />
+            
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Vel/Vel_Rear_Wheel_Left.yaml"
+            ns="Vel_Rear_Wheel_Left" />                       
+
+  <rosparam command="load"
+            file="$(find mpc_sim)/config/Vel/Vel_Rear_Wheel_Right.yaml"
+            ns="Vel_Rear_Wheel_Right" />
+            
+  <node name="Steer_Drive_Controller_spawner" pkg="controller_manager" type="spawner"
+    args="vehcile_joint_state_controller
+          Vel_Rear_Wheel_Left
+          Vel_Rear_Wheel_Right
+          Pos_Front_Wheel_Right_Steer
+          Vel_Front_Wheel_Right_Drive
+          Pos_Front_Wheel_Left_Steer
+          Vel_Front_Wheel_Left_Drive
+          --shutdown-timeout 3"/>
+
+  <node pkg="mpc_sim" type="Ackerman_MPC_Point_Stabilization_Speed.py" name="Ackerman_MPC_Point_Stabilization_Speed" output="screen"/>
+  <node pkg="mpc_sim" type="Bicycle2Ackerman_Speed.py" name="Bicycle2Ackerman_Speed" output="screen"/>
+
+</launch>
