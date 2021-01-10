@@ -2,20 +2,20 @@
 This repository contains MPC ROS package implemented in Python using CasADi toolbox. The package was tested and verified on Ubuntu 16.04 and ROS Kinetic.
 
 # Description
-- The current implementation takes a certain goal pose and tries to drive the ego vehicle to achieve it. 
+- The current implementation takes a goal pose and tries to drive the ego vehicle to that goal. 
 - There are no obstacles or any other vehicles implemented in this simulation.
 - The initial goal pose **(x, y, theta)** is set to **(20, 5, 0)** and can be changed easily.
 
-- The package contains URDF ackerman vehicle model built using Chevy Bolt parameters to run dynamic simulations using Gazebo. 
+- The package contains a URDF ackerman vehicle model dynamic simulations using Gazebo. 
 - The package contains two ROS nodes implemented in Python: 
-    - **Ackerman_MPC_Point_Stabilization** node recieves the current vehicle state from Gazebo and solves for the optimal control actions to achieve the target pose.
+    - **Ackerman_MPC_Point_Stabilization** node recieves current vehicle state from Gazebo, formulate the optimal control problem, and solves for the optimal control actions.
     - **Bicycle2Ackerman** node maps the obtained control actions into all-drive vehicle inputs and publishes them to Gazebo.
 
 # Installation
 
 Clone the repo:
 ``` bash
-git clone https://git.uwaterloo.ca/magdaoud/mpc_sim.git
+git clone https://github.com/MohamedDaoud1/mpc_go2goal
 ```
 
 We also need to install the following three packages:
@@ -32,10 +32,16 @@ sudo apt-get install ros-kinetic-ros-controllers
 sudo apt-get install ros-kinetic-gazebo-ros-control 
 ```
 
-Then, build using catkin make:
+Then build using catkin make:
 ``` bash
 catkin_make
 ```
+Finally source the new package:
+
+``` bash
+source devel/setup.bash
+```
+
 # Running the simulation
 
 To run the simulation:
@@ -52,4 +58,4 @@ y: 5.0
 theta: 0.0" 
 ```
 
-**This work is not open for public use and is limited to WATOnomous Design Team use to participate in AutoDrive Challenge.**
+This work is part my master's thesis available at https://uwspace.uwaterloo.ca/handle/10012/16436
