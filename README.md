@@ -1,4 +1,4 @@
-## MPC Point Stablization
+## MPC Go to goal (Point Stablization)
 This repository contains MPC ROS package implemented in Python using CasADi toolbox. The package was tested and verified on Ubuntu 16.04 and ROS Kinetic.
 
 # Description
